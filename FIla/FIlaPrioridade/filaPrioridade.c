@@ -8,75 +8,121 @@ typedef struct Node
     struct Node *next;
 } Node;
 
-void inserirNaLista(Node **lista, int valor, int prioridade)
+// ENFILEIRAR
+void enfileirar(Node **fila, int valor, int prioridade)
 {
-    Node *novoNo = (Node *)malloc(sizeof(Node));
+    Node *novoNo = malloc(sizeof(Node));
+
     if (novoNo == NULL)
+    {
         return;
+    }
 
     novoNo->valor = valor;
     novoNo->prioridade = prioridade;
     novoNo->next = NULL;
 
-    // Lista vazia ou prioridade maior que a do primeiro: entra na cabeça
-    if (*lista == NULL || prioridade > (*lista)->prioridade)
+    // CASO 1: fila vazia
+    if (*fila == NULL)
     {
-        novoNo->next = *lista;
-        *lista = novoNo;
+        *fila = novoNo;
         return;
     }
 
-    Node *atual = *lista;
+    // CASO 2: prioridade menor que a do primeiro
+    // entra no início
+    if (prioridade < (*fila)->prioridade)
+    {
+        novoNo->next = *fila;
+        *fila = novoNo;
+        return;
+    }
 
-    // >= mantém a ordem de chegada entre prioridades iguais (FIFO)
-    while (atual->next != NULL && atual->next->prioridade >= novoNo->prioridade)
+    // CASO 3: procurar posição no meio/final
+    Node *atual = *fila;
+
+    while (atual->next != NULL &&
+           atual->next->prioridade <= prioridade)
+    {
         atual = atual->next;
+    }
 
-    // Estava faltando: liga o novo nó na posição encontrada
+    // Encaixa o novo nó
     novoNo->next = atual->next;
     atual->next = novoNo;
 }
 
-// Remove o elemento de maior prioridade (sempre o primeiro da lista).
-// Retorna 1 se removeu, 0 se a fila estava vazia.
-int desinfileirar(Node **lista, int *valor, int *prioridade)
+// DESENFILEIRAR
+int desenfileirar(Node **fila)
 {
-    if (*lista == NULL)
-        return 0;
+    // Fila vazia
+    if (*fila == NULL)
+    {
+        return -1;
+    }
 
-    Node *remover = *lista;
+    Node *atual = *fila;
+    Node *anterior = NULL;
 
-    *valor = remover->valor;
-    *prioridade = remover->prioridade;
+    // Percorre até o último
+    while (atual->next != NULL)
+    {
+        anterior = atual;
+        atual = atual->next;
+    }
 
-    *lista = remover->next;
-    free(remover);
+    int valorRemovido = atual->valor;
 
-    return 1;
+    // Só existe um elemento
+    if (anterior == NULL)
+    {
+        *fila = NULL;
+    }
+    else
+    {
+        anterior->next = NULL;
+    }
+
+    free(atual);
+
+    return valorRemovido;
 }
 
-void imprimirLista(Node *lista)
+// IMPRIMIR
+void imprimir(Node *fila)
 {
-    for (Node *atual = lista; atual != NULL; atual = atual->next)
-        printf("(valor=%d, prioridade=%d) ", atual->valor, atual->prioridade);
-    printf("\n");
+    Node *atual = fila;
+
+    while (atual != NULL)
+    {
+        printf(
+            "Valor: %d | Prioridade: %d\n",
+            atual->valor,
+            atual->prioridade);
+
+        atual = atual->next;
+    }
 }
 
 int main()
 {
     Node *fila = NULL;
 
-    inserirNaLista(&fila, 10, 2);
-    inserirNaLista(&fila, 20, 5);
-    inserirNaLista(&fila, 30, 1);
-    inserirNaLista(&fila, 40, 5); // mesma prioridade do 20, fica depois dele
+    enfileirar(&fila, 40, 1);
+    enfileirar(&fila, 10, 1);
 
-    printf("Fila: ");
-    imprimirLista(fila);
+    enfileirar(&fila, 20, 2);
+    enfileirar(&fila, 50, 2);
 
-    int valor, prioridade;
-    while (desinfileirar(&fila, &valor, &prioridade))
-        printf("Saiu: valor=%d, prioridade=%d\n", valor, prioridade);
+    enfileirar(&fila, 30, 3);
+
+    printf("Fila:\n");
+    imprimir(fila);
+
+    printf("\nRemovido: %d\n", desenfileirar(&fila));
+
+    printf("\nDepois da remocao:\n");
+    imprimir(fila);
 
     return 0;
 }
